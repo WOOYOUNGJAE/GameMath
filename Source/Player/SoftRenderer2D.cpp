@@ -93,6 +93,8 @@ void SoftRenderer::Render2D()
 	static float increment = 0.001f;
 	static std::vector<Vector2> hearts;
 
+	HSVColor hsv(0.f, 1.f, 0.85f);
+
 	// 하트를 구성하는 점 생성
 	if (hearts.empty())
 	{
@@ -109,10 +111,15 @@ void SoftRenderer::Render2D()
 		}
 	}
 
+	rad = 0.f;
 	for (auto const& v : hearts)
+	// 각 값을 초기화한 후 색상을 증가시키면서 점에 대응
 	{
-		r.DrawPoint(v * currentScale + currentPosition, LinearColor::Blue);
+		hsv.H = rad / Math::TwoPI;
+		r.DrawPoint(v * currentScale + currentPosition, hsv.ToLinearColor());
+		rad += increment;
 	}
+
 
 	// 현재 위치와 스케일을 화면에 출력
 	r.PushStatisticText(std::string("Position : ") + currentPosition.ToString());
