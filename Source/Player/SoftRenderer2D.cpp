@@ -55,6 +55,7 @@ void SoftRenderer::LoadScene2D()
 // 게임 로직과 렌더링 로직이 공유하는 변수
 Vector2 currentPosition;
 float currentScale = 10.f;
+float currentDegree = 0.f;
 
 // 게임 로직을 담당하는 함수
 void SoftRenderer::Update2D(float InDeltaSeconds)
@@ -68,14 +69,17 @@ void SoftRenderer::Update2D(float InDeltaSeconds)
 	static float scaleMin = 5.f;
 	static float scaleMax = 20.f;
 	static float scaleSpeed = 20.f;
+	static float rotateSpeed = 180.f;
 
 	Vector2 inputVector = Vector2(input.GetAxis(InputAxis::XAxis), input.GetAxis(InputAxis::YAxis)).GetNormalize();
 	Vector2 deltaPosition = inputVector * moveSpeed * InDeltaSeconds;
 	float deltaScale = input.GetAxis(InputAxis::ZAxis) * scaleSpeed * InDeltaSeconds;
+	float deltaDegree = input.GetAxis(InputAxis::WAxis) * rotateSpeed * InDeltaSeconds;
 
 	// 물체의 최종 상태 설정
 	currentPosition += deltaPosition;
 	currentScale = Math::Clamp(currentScale + deltaScale, scaleMin, scaleMax);
+	currentDegree += deltaDegree;
 }
 
 // 렌더링 로직을 담당하는 함수
@@ -109,13 +113,23 @@ void SoftRenderer::Render2D()
 			hearts.push_back(Vector2(x, y));
 		}
 	}
+	// 각도에 해당하는 사인 코사인
+	float sin = 0.f, cos = 0.f;
+	Math::GetSinCos(sin, cos, currentDegree);
 
 	// 각 값을 초기화한 후 색상을 증가시키면서 점에 대응
 	rad = 0.f;
 	for (auto const& v : hearts)
 	{
+		// 점에 크기를 적용
+		Vector2 scaledV = v * currentScale;
+		// 크기가 변한 점을 회전
+		Vector2 rotatedV = Vector2(scaledV.X * cos - scaledV.Y * sin, scaledV.X * sin + scaledV.Y * cos);
+		// 회전시킨 점을 이동시킴
+		Vector2 translatedV = rotatedV + currentPosition;
+
 		hsv.H = rad / Math::TwoPI;
-		r.DrawPoint(v * currentScale + currentPosition, hsv.ToLinearColor());
+		r.DrawPoint(translatedV, hsv.ToLinearColor());
 		rad += increment;
 	}
 
