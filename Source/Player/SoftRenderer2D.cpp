@@ -114,12 +114,34 @@ void SoftRenderer::Render2D()
 		}
 	}
 
+	// 각도에 해당하는 사인과 코사인 함수 얻기
+	float sin = 0.f, cos = 0.f;
+	Math::GetSinCos(sin, cos, currentDegree);
+
+	// 회전 변환행렬의 기저벡터와 행렬
+	Vector2 rBasis1(cos, sin);
+	Vector2 rBasis2(-sin, cos);
+	Matrix2x2 rMatrix(rBasis1, rBasis2);
+
+	// 크기 변환행렬의 기저벡터와 행렬
+	Vector2 sBasis1 = Vector2::UnitX * currentScale;
+	Vector2 sBasis2 = Vector2::UnitY * currentScale;
+	Matrix2x2 sMatrix(sBasis1, sBasis2);
+
+	// 크기, 회전의 순서로 진행하는 합성 변한행렬의 계산
+	Matrix2x2 finalMatrix = rMatrix * sMatrix;
+
 	// 각 값을 초기화한 후 색상을 증가시키면서 점에 대응
 	rad = 0.f;
 	for (auto const& v : hearts)
 	{
+		// 1. 점에 행렬을 적용
+		Vector2 transformedV = finalMatrix * v;
+		// 2. 변환된 점을 이동한다
+		Vector2 translatedV = transformedV + currentPosition;
+
 		hsv.H = rad / Math::TwoPI;
-		r.DrawPoint(v, hsv.ToLinearColor());
+		r.DrawPoint(translatedV, hsv.ToLinearColor());
 		rad += increment;
 	}
 
