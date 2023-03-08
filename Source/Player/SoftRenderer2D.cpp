@@ -114,14 +114,53 @@ void SoftRenderer::Render2D()
 		}
 	}
 
+	// 크기 변환 행렬
+	Vector2 sBasis1(currentScale, 0.f);
+	Vector2 sBasis2(0.f, currentScale);
+	Matrix2x2 sMatrix(sBasis1, sBasis2);
+
+	// 회전 변환 행렬
+	float sin = 0.f, cos = 0.f;
+	Math::GetSinCos(sin, cos, currentDegree);
+	Vector2 rBasis1(cos, sin);
+	Vector2 rBasis2(-sin, cos);
+	Matrix2x2 rMatrix(rBasis1, rBasis2);
+
+	// 전단 변환 행렬
+	Vector2 shBasis1 = Vector2::UnitX;
+	Vector2 shBasis2(currentShear, 1.f);
+	Matrix2x2 shMatrix(shBasis1, shBasis2);
+
+	// 합성 행렬
+	Matrix2x2 cMatrix = shMatrix * rMatrix * sMatrix;
+
+	// 크기 변환 행렬의 역행렬
+	float invScale = 1.f / currentScale;
+	Vector2 isBasis1(invScale, 0.f);
+	Vector2 isBasis2(0.f, invScale);
+	Matrix2x2 isMatrix(isBasis1, isBasis2);
+
+	// 회전 변환 행렬의 역행렬
+	Matrix2x2 irMatrix = rMatrix.Transpose();
+
+	// 전단 변환 행렬	
+	Matrix2x2 ishMatrix(shBasis1, Vector2(shBasis2.X - 2 * currentShear, 1.f) );
+
+	// 합성 역행렬
+	Matrix2x2 icMatrix = isMatrix * irMatrix * ishMatrix;
+
+
+
 	rad = 0.f;
 	for (auto const& v : hearts)
 	{
 		// 왼쪽 하트
-		r.DrawPoint(v - pivot, hsv.ToLinearColor());
+		Vector2 left = cMatrix * v;
+		r.DrawPoint(left - pivot, hsv.ToLinearColor());
 
 		// 오른쪽 하트
-		r.DrawPoint(v + pivot, hsv.ToLinearColor());
+		Vector2 right = icMatrix * left;
+		r.DrawPoint(right + pivot, hsv.ToLinearColor());
 
 		hsv.H = rad / Math::TwoPI;
 		rad += increment;
